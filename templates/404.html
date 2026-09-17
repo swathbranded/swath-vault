@@ -1,0 +1,12 @@
+{% set root = "/" %}
+{% extends "base.html" %}
+{% block title %}Not found | {{ cfg.site_name }}{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Not found</p>
+    <h1>That piece is not in the Vault anymore.</h1>
+    <p class="lede">The Vault refreshes every night and pieces come and go. <a href="/">Head back to the Vault</a>, or <a href="{{ cfg.quote_url }}">tell us what you were looking for</a> and we will find it.</p>
+  </div>
+</section>
+{% endblock %}

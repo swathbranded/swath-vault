@@ -1,0 +1,106 @@
+{% set root = "" %}
+{% extends "base.html" %}
+{% block title %}The Vault | SWATH Branded Goods{% endblock %}
+{% block bodyclass %}page-index{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="wrap">
+    <p class="eyebrow">The Vault</p>
+    <h1>Everything behind The Collection.</h1>
+    <p class="lede">The Collection is what we put on the table. The Vault is the {{ count }} pieces behind it across drinkware, bags, apparel, tech and more, every one decoratable and deliverable by SWATH. Nothing here is a checkout. Find what fits, send it over, and we quote, mock up and deliver the whole program.</p>
+    <form class="search" role="search" onsubmit="return false">
+      <label class="sr-only" for="q">Search the Vault</label>
+      <input id="q" type="search" placeholder="Search the Vault by item, brand, style number or material" autocomplete="off">
+      <button type="button" class="btn btn-gold" id="clear-q" aria-label="Clear search">Clear</button>
+    </form>
+  </div>
+</section>
+
+{% if featured %}
+<section class="featured">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>From The Collection</h2>
+      <a class="text-link" href="{{ cfg.collection_url }}">See the full Collection</a>
+    </div>
+    <div class="grid grid-featured">
+      {% for p in featured %}
+      <a class="card" href="p/{{ p.slug }}/{{ sfx }}">
+        <div class="card-img"><img loading="lazy" src="{{ p.image }}" alt="{{ p.name }}"></div>
+        <div class="card-body">
+          <p class="card-brand">{{ p.brand or p.subcategory }}</p>
+          <h3 class="card-title">{{ p.name }}</h3>
+          {% if p.display_price %}<p class="card-price"><strong>{{ p.display_price | money }}</strong> <span class="muted">{{ p.display_label | replace("decorated, ", "") }}</span></p>{% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="catalog" id="vault">
+  <div class="wrap">
+    <div class="filters" id="filters">
+      <div class="chips" id="cat-chips" role="group" aria-label="Category">
+        <button class="chip chip-on" data-cat="">All</button>
+        {% for cat, subs in categories.items() %}
+        <button class="chip" data-cat="{{ cat }}">{{ cat }}</button>
+        {% endfor %}
+      </div>
+      <div class="filter-row">
+        <label>Type
+          <select id="sub"><option value="">All types</option></select>
+        </label>
+        <label>Brand
+          <select id="brand">
+            <option value="">All brands</option>
+            {% for b in brands %}<option value="{{ b }}">{{ b }}</option>{% endfor %}
+          </select>
+        </label>
+        <label>Price
+          <select id="price">
+            <option value="">Any price</option>
+            <option value="0-10">Under $10</option>
+            <option value="10-25">$10 to $25</option>
+            <option value="25-50">$25 to $50</option>
+            <option value="50-100">$50 to $100</option>
+            <option value="100-">$100 and up</option>
+          </select>
+        </label>
+        <label>Sort
+          <select id="sort">
+            <option value="rel">Relevance</option>
+            <option value="name">Name A to Z</option>
+            <option value="plo">Price, low to high</option>
+            <option value="phi">Price, high to low</option>
+          </select>
+        </label>
+        <button type="button" class="btn btn-ghost" id="reset">Reset</button>
+      </div>
+      <p class="result-count" id="count" aria-live="polite"></p>
+    </div>
+
+    <div class="grid" id="grid"></div>
+    <div class="more-row"><button type="button" class="btn btn-dark" id="more">Show more</button></div>
+    <p class="empty" id="empty" hidden>Nothing matched. Try a broader search, or <a href="{{ cfg.quote_url }}">tell us what you are after</a> and we will source it.</p>
+  </div>
+</section>
+
+<section class="how">
+  <div class="wrap">
+    <h2>How this works</h2>
+    <ol class="steps">
+      {% for title, body in cfg.how_it_works %}
+      <li><span class="step-num">{{ loop.index }}</span><h3>{{ title }}</h3><p>{{ body }}</p></li>
+      {% endfor %}
+    </ol>
+    <a class="btn btn-gold btn-lg" href="{{ cfg.quote_url }}">Request a quote</a>
+  </div>
+</section>
+{% endblock %}
+{% block scripts %}
+<script id="vault-data" type="application/json">{{ index_json | safe }}</script>
+<script>window.SWATH = {root: "", sfx: "{{ sfx }}", categories: {{ categories | tojson }}};</script>
+<script src="assets/vault.js" defer></script>
+{% endblock %}

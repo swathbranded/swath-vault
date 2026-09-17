@@ -1,0 +1,71 @@
+{
+  "site_name": "The Vault",
+  "site_url": "https://vault.swathbranded.com",
+  "custom_domain": "vault.swathbranded.com",
+  "main_site_url": "https://swathbranded.com",
+  "collection_url": "https://swathbranded.com/collection",
+  "quote_url": "https://swathbranded.com/quote",
+  "quote_param": "piece",
+  "contact_email": "connect@swathbranded.com",
+  "phone": "319-214-0322",
+  "feeds": {
+    "product": "https://public.pcna.online/pcnapublicftp/Feeds/Pcna.ProductData.csv.zip",
+    "pricing": "https://public.pcna.online/pcnapublicftp/Feeds/Pcna.ProductPricing.csv.zip",
+    "media": "https://public.pcna.online/pcnapublicftp/Feeds/Pcna.ProductMedia.csv.zip",
+    "decoration": "https://public.pcna.online/pcnapublicftp/Feeds/Pcna.ProductDecoration.csv.zip"
+  },
+  "cache_hours": 20,
+  "pricing": {
+    "mode": "list",
+    "markup_margin": 0.4,
+    "program_quantity": 100,
+    "spotlight_price": 45,
+    "show_price_table": true,
+    "show_blank_prices": false,
+    "note": "List pricing shown before program discounts. Every SWATH program is quoted individually, and most land below list."
+  },
+  "filters": {
+    "min_from_price": 3.0,
+    "require_image": true,
+    "require_pricing": true,
+    "exclude_categories": [],
+    "exclude_subcategories": [],
+    "exclude_brands": [],
+    "exclude_styles": [],
+    "exclude_name_keywords": [
+      "stress ball",
+      "stress reliever",
+      "lanyard",
+      "drawstring"
+    ]
+  },
+  "hidden_brand_names": [
+    "Trimark",
+    "Bullet",
+    "Leeds",
+    "Leed's",
+    "PCNA"
+  ],
+  "featured_styles": [
+    "1603-21",
+    "9020-99",
+    "3860-77",
+    "TM18312",
+    "0917-02",
+    "1022-17"
+  ],
+  "how_it_works": [
+    [
+      "Browse the Vault",
+      "Everything in here can be decorated and delivered by SWATH. Use it to spark a program, not to check out."
+    ],
+    [
+      "Tell us the program",
+      "Headcount, budget, needed-by date, and who it is for. Two minutes on the quote form."
+    ],
+    [
+      "We do the rest",
+      "Curation, mockups, pricing, decoration, kitting and shipping, under one point of contact."
+    ]
+  ]
+}

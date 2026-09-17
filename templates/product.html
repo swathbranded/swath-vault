@@ -1,0 +1,141 @@
+{% set root = "../../" %}
+{% extends "base.html" %}
+{% block title %}{{ p.name }}{% if p.brand %} by {{ p.brand }}{% endif %} | The Vault | SWATH Branded Goods{% endblock %}
+{% block description %}{{ p.name }}{% if p.brand %} by {{ p.brand }}{% endif %}, custom branded for your program by SWATH Branded Goods.{% if p.from_price %} From {{ p.from_price | money }} list.{% endif %}{% endblock %}
+{% block head %}
+<link rel="canonical" href="{{ cfg.site_url }}/p/{{ p.slug }}/">
+<meta property="og:title" content="{{ p.name }}">
+<meta property="og:image" content="{{ p.image_large }}">
+<meta property="og:type" content="product">
+<script type="application/ld+json">{{ {
+  "@context": "https://schema.org", "@type": "Product",
+  "name": p.name, "sku": p.style, "image": p.image_large,
+  "brand": ({"@type": "Brand", "name": p.brand} if p.brand else none),
+  "description": p.description or p.name,
+  "offers": ({"@type": "AggregateOffer", "priceCurrency": "USD", "lowPrice": p.from_price,
+              "availability": "https://schema.org/InStock", "url": cfg.site_url ~ "/p/" ~ p.slug ~ "/"} if p.from_price else none)
+} | tojson }}</script>
+{% endblock %}
+{% block bodyclass %}page-product{% endblock %}
+{% block content %}
+{% set quote_link = cfg.quote_url ~ "?" ~ cfg.quote_param ~ "=" ~ (p.name ~ " (" ~ p.style ~ ")") | urlencode %}
+{% set mail_link = "mailto:" ~ cfg.contact_email ~ "?subject=" ~ ("Quote request: " ~ p.name ~ " (" ~ p.style ~ ")") | urlencode %}
+<div class="wrap">
+  <nav class="crumbs" aria-label="Breadcrumb">
+    <a href="{{ root }}{{ sfx }}">The Vault</a>
+    <span>/</span><a href="{{ root }}{{ sfx }}?cat={{ p.category | urlencode }}">{{ p.category }}</a>
+    {% if p.subcategory and p.subcategory != p.category %}<span>/</span><a href="{{ root }}{{ sfx }}?cat={{ p.category | urlencode }}&sub={{ p.subcategory | urlencode }}">{{ p.subcategory }}</a>{% endif %}
+  </nav>
+
+  <article class="product">
+    <div class="gallery">
+      <div class="gallery-main"><img id="main-img" src="{{ p.image_large }}" alt="{{ p.name }}"></div>
+      {% if p.gallery | length > 1 %}
+      <div class="thumbs" id="thumbs">
+        {% for u in p.gallery %}<button type="button" class="thumb{% if loop.first %} thumb-on{% endif %}" data-src="{{ u }}"><img loading="lazy" src="{{ u | replace('/t_PS_EXTRALARGE2/', '/t_PS_SMALL/') }}" alt=""></button>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="info">
+      <p class="eyebrow">{{ p.category }}{% if p.subcategory and p.subcategory != p.category %} &middot; {{ p.subcategory }}{% endif %}</p>
+      <h1>{{ p.name }}</h1>
+      <p class="meta">{% if p.brand %}<span class="brand">{{ p.brand }}</span> &middot; {% endif %}Style {{ p.style }}{% if p.min_qty %} &middot; Minimum {{ p.min_qty }}{% endif %}</p>
+
+      {% if p.display_price %}
+      <div class="pricebox">
+        <p class="price-from"><strong>{{ p.display_price | money }}</strong> <span>per piece, list, {{ p.display_label }}</span></p>
+        {% if p.low_price %}<p class="price-program">as low as {{ p.low_price | money }} at {{ p.low_qty }}+ pieces</p>{% endif %}
+        <p class="price-note">{{ cfg.pricing.note }}</p>
+      </div>
+      {% endif %}
+
+      <div class="cta">
+        <a class="btn btn-gold btn-lg" href="{{ quote_link }}">Request a quote</a>
+        <a class="btn btn-ghost btn-lg" href="{{ mail_link }}">Email about this item</a>
+      </div>
+
+      {% if p.description %}<p class="desc">{{ p.description }}</p>{% endif %}
+
+      {% if p.colors %}
+      <section class="block">
+        <h2>Colors <span class="count">({{ p.colors | length }})</span></h2>
+        <div class="swatches">
+          {% for c in p.colors %}
+          <button type="button" class="swatch" title="{{ c.name }}" data-src="{{ c.img | replace('/t_PS_MEDIUM/', '/t_PS_EXTRALARGE2/') }}">
+            {% if c.img %}<img loading="lazy" src="{{ c.img | replace('/t_PS_MEDIUM/', '/t_PS_SMALL/') }}" alt="">{% endif %}
+            <span>{{ c.name }}</span>
+          </button>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if p.sizes %}
+      <section class="block"><h2>Sizes</h2><p class="sizes">{{ p.sizes | join(" · ") }}</p></section>
+      {% endif %}
+
+      {% if p.decoration %}
+      <section class="block">
+        <h2>Decoration</h2>
+        <ul class="deco">
+          {% for d in p.decoration %}
+          <li><strong>{{ d.method }}</strong>{% if d.area %} <span class="muted">{{ d.area }}</span>{% endif %}
+            {% if d.locations %}<span class="locs">{{ d.locations | join("; ") }}{% if d.location_count > d.locations | length %}; +{{ d.location_count - d.locations | length }} more{% endif %}</span>{% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if cfg.pricing.show_price_table and p.decorated_tiers %}
+      <details class="block">
+        <summary>List price by quantity</summary>
+        <table class="tiers">
+          <thead><tr><th>Quantity</th><th>Decorated, per piece</th>{% if cfg.pricing.show_blank_prices and p.blank_tiers %}<th>Blank, per piece</th>{% endif %}</tr></thead>
+          <tbody>
+          {% for q, price in p.decorated_tiers %}
+          <tr><td>{{ q }}+</td><td>{{ price | money }}</td>{% if cfg.pricing.show_blank_prices and p.blank_tiers %}<td>{% for bq, bp in p.blank_tiers if bq == q %}{{ bp | money }}{% endfor %}</td>{% endif %}</tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        <p class="price-note">Setup and run charges, freight and any rush fees are quoted per program.</p>
+      </details>
+      {% endif %}
+
+      {% if p.materials or p.dimensions or p.weight or p.packaging %}
+      <details class="block">
+        <summary>Details</summary>
+        <dl class="details">
+          {% if p.materials %}<dt>Materials</dt><dd>{{ p.materials }}</dd>{% endif %}
+          {% if p.dimensions %}<dt>Dimensions</dt><dd>{{ p.dimensions }}</dd>{% endif %}
+          {% if p.weight %}<dt>Weight</dt><dd>{{ p.weight }}</dd>{% endif %}
+          {% if p.packaging %}<dt>Packaging</dt><dd>{{ p.packaging }}</dd>{% endif %}
+        </dl>
+      </details>
+      {% endif %}
+    </div>
+  </article>
+
+  {% if related %}
+  <section class="related">
+    <div class="section-head"><h2>More {{ p.subcategory or p.category }}</h2><a class="text-link" href="{{ root }}{{ sfx }}?cat={{ p.category | urlencode }}&sub={{ p.subcategory | urlencode }}">See all</a></div>
+    <div class="grid">
+      {% for r in related %}
+      <a class="card" href="{{ root }}p/{{ r.slug }}/{{ sfx }}">
+        <div class="card-img"><img loading="lazy" src="{{ r.image }}" alt="{{ r.name }}"></div>
+        <div class="card-body">
+          <p class="card-brand">{{ r.brand or r.subcategory }}</p>
+          <h3 class="card-title">{{ r.name }}</h3>
+          {% if r.display_price %}<p class="card-price"><strong>{{ r.display_price | money }}</strong> <span class="muted">{{ r.display_label | replace("decorated, ", "") }}</span></p>{% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ root }}assets/product.js" defer></script>
+{% endblock %}

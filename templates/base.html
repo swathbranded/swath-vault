@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}{{ cfg.site_name }}{% endblock %}</title>
+<meta name="description" content="{% block description %}The Vault: every piece SWATH Branded Goods can build a program around. Browse, then request a quote.{% endblock %}">
+{% block head %}{% endblock %}
+<link rel="icon" href="{{ root }}assets/favicon-64.png" type="image/png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ root }}assets/site.css">
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+<header class="site-header">
+  <div class="wrap header-row">
+    <a class="logo" href="{{ root }}{{ sfx }}" aria-label="SWATH Branded Goods, Vault home">
+      <img src="{{ root }}assets/swath-header-lockup-horizontal.png" alt="SWATH Branded Goods" width="1581" height="400">
+    </a>
+    <nav class="nav" aria-label="Site">
+      <a href="{{ root }}{{ sfx }}" class="nav-link nav-current">The Vault</a>
+      <a href="{{ cfg.collection_url }}" class="nav-link">The Collection</a>
+      <a href="{{ cfg.main_site_url }}" class="nav-link nav-quiet">swathbranded.com</a>
+      <a href="{{ cfg.quote_url }}" class="btn btn-gold">Get a quote</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="wrap footer-grid">
+    <div>
+      <img class="footer-logo" src="{{ root }}assets/swath-lockup-gold.svg" alt="" width="120" height="120">
+      <p class="tagline">Fewer, Bigger, Better.</p>
+    </div>
+    <div class="footer-links">
+      <a href="{{ cfg.main_site_url }}">swathbranded.com</a>
+      <a href="{{ cfg.collection_url }}">The Collection</a>
+      <a href="{{ cfg.quote_url }}">Request a quote</a>
+      <a href="mailto:{{ cfg.contact_email }}">{{ cfg.contact_email }}</a>
+      <a href="tel:{{ cfg.phone | replace('-', '') }}">{{ cfg.phone }}</a>
+    </div>
+    <div class="footer-note">
+      <p>{{ cfg.pricing.note }}</p>
+      <p>The Vault refreshed {{ built }}. {{ count }} pieces.</p>
+      <p>SWATH LLC dba SWATH Branded Goods &middot; Cedar Rapids, IA &middot; SBA-certified Veteran-Owned Small Business</p>
+    </div>
+  </div>
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>
