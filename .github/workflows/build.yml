@@ -27,6 +27,9 @@ jobs:
           python-version: "3.12"
       - run: pip install -r requirements.txt
       - run: python build.py --refresh
+        env:
+             PCNA_PS_ID: ${{ secrets.PCNA_PS_ID }}
+             PCNA_PS_PASSWORD: ${{ secrets.PCNA_PS_PASSWORD }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
