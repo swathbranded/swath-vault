@@ -28,6 +28,8 @@ from urllib.request import Request, urlopen
 import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from inventory import load_inventory, normalize_color
+
 ROOT = Path(__file__).resolve().parent
 CACHE = ROOT / "cache"
 DIST = ROOT / "dist"
@@ -311,9 +313,14 @@ def build_products(cfg: dict, refresh: bool, limit: int | None) -> tuple[list[di
         for _, row in g.iterrows():
             c = clean(row.MARKET_COLORS)
             c = re.sub(r"\s*\(\s*[^)]*\)\s*$", "", c)  # strip "(BK)" style codes
+            sku = clean(row.PCNA_SKU_Number)
             if c and c.lower() not in seen:
                 seen.add(c.lower())
-                colors.append({"name": c, "sku": clean(row.PCNA_SKU_Number)})
+                colors.append({"name": c, "sku": sku, "skus": [sku]})
+            elif c:
+                col = next(x for x in colors if x["name"].lower() == c.lower())
+                if sku and sku not in col["skus"]:
+                    col["skus"].append(sku)
         size_order = ["XS", "S", "M", "L", "XL", "2XL", "3XL", "4XL", "5XL", "6XL",
                       "XS/S", "S/M", "M/L", "L/XL", "XL/2XL", "2XL/3XL", "O/S"]
         sizes = sorted({clean(s) for s in g.Product_Size if clean(s) not in ("", "0")},
@@ -402,6 +409,25 @@ def build_products(cfg: dict, refresh: bool, limit: int | None) -> tuple[list[di
         })
 
     stats["styles_published"] = len(products)
+
+    # ---- live stock (PromoStandards Inventory) ------------------------------ #
+    print("Checking live stock")
+    inv, fetched = load_inventory([p["style"] for p in products], cfg.get("inventory", {}),
+                                  CACHE, int(pc.get("program_quantity", 100)))
+    stats["inventory_checked"] = fetched
+    stats["styles_with_stock"] = 0
+    for p in products:
+        st = inv.get(p["style"])
+        p["stock"] = st
+        if st:
+            stats["styles_with_stock"] += 1
+            by_part = st.get("by_part", {})
+            for c in p["colors"]:
+                # Match on SKU first (reliable); fall back to the colour name.
+                hits = [by_part[k] for k in c["skus"] if k in by_part]
+                c["qty"] = sum(hits) if hits else st["by_color"].get(normalize_color(c["name"]))
+            if st.get("next"):
+                st["next_label"] = dt.date.fromisoformat(st["next"]["on"]).strftime("%b %d").replace(" 0", " ")
     return products, stats
 
 
@@ -414,6 +440,10 @@ def render_site(cfg: dict, products: list[dict], stats: dict, local: bool = Fals
                       autoescape=select_autoescape(["html"]))
     env.filters["money"] = money
     built = dt.datetime.now().strftime("%B %d, %Y")
+    stock_date = ""
+    if stats.get("inventory_checked"):
+        stock_date = dt.datetime.fromisoformat(stats["inventory_checked"]).astimezone(
+            dt.timezone(dt.timedelta(hours=-6))).strftime("%b %d").replace(" 0", " ")
 
     by_style = {p["style"]: p for p in products}
     by_sub = {}
@@ -444,12 +474,13 @@ def render_site(cfg: dict, products: list[dict], stats: dict, local: bool = Fals
         "p": p["display_price"], "pl": p["display_label"], "q": p["min_qty"],
         "i": p["image"], "k": len(p["colors"]),
         "m": [d["method"] for d in p["decoration"]][:6],
+        "st": (p["stock"] or {}).get("status", ""),
     } for p in products]
 
     # --local writes links that end in index.html so the folder can be opened
     # straight from disk (double-click index.html) without a web server.
     sfx = "index.html" if local else ""
-    common = dict(cfg=cfg, built=built, categories=categories, brands=brands,
+    common = dict(cfg=cfg, built=built, stock_date=stock_date, categories=categories, brands=brands,
                   featured=featured, count=len(products), stats=stats, sfx=sfx)
 
     def write(path: Path, html: str):

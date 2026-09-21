@@ -58,6 +58,33 @@ touch it again unless you want to change something below.
 If you would rather use Cloudflare Pages or Netlify, both can run the same command
 (`pip install -r requirements.txt && python build.py --refresh`, output folder `dist`).
 
+## Live stock (PromoStandards)
+
+Every nightly build also asks PCNA's PromoStandards Inventory service how many of each
+item are on hand. Item pages get a stock line (In stock, Limited stock, Restocking with the
+next arrival date, or Made to order), each color shows its own count, listing cards show an
+"In stock" tag, and the filters get an "In stock only" checkbox. "Limited stock" means fewer
+than `pricing.program_quantity` pieces (100) across all colors. The check takes about six
+minutes for the full Vault.
+
+The login is never stored in this folder. It comes from two environment variables:
+
+| Name | Value |
+|---|---|
+| `PCNA_PS_ID` | PromoStandards production ID from Kerry Schutte's email |
+| `PCNA_PS_PASSWORD` | PromoStandards production password from the same email |
+
+On GitHub: repository Settings, then Secrets and variables, then Actions, then "New
+repository secret", once for each name. The workflow already passes them to the build.
+
+If the secrets are missing, the password is wrong, or PCNA's service is down, the build
+still publishes. It reuses the last good stock check if it is under 48 hours old
+(`inventory.max_cache_hours`), and otherwise publishes without stock lines. Turn the
+feature off entirely with `"inventory": {"enabled": false}` in `config.json`.
+
+The PromoStandards specification documents are licensed for internal use only, so keep
+them out of this repository. They live in `Suppliers/PCNA/PromoStandards/`.
+
 ## Things you will actually want to change
 
 All of these live in `config.json`.

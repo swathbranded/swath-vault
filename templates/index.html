@@ -76,6 +76,7 @@
             <option value="phi">Price, high to low</option>
           </select>
         </label>
+        {% if stats.styles_with_stock %}<label class="stock-toggle"><input type="checkbox" id="stock"> In stock only</label>{% endif %}
         <button type="button" class="btn btn-ghost" id="reset">Reset</button>
       </div>
       <p class="result-count" id="count" aria-live="polite"></p>

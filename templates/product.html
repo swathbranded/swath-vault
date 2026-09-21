@@ -13,7 +13,7 @@
   "brand": ({"@type": "Brand", "name": p.brand} if p.brand else none),
   "description": p.description or p.name,
   "offers": ({"@type": "AggregateOffer", "priceCurrency": "USD", "lowPrice": p.from_price,
-              "availability": "https://schema.org/InStock", "url": cfg.site_url ~ "/p/" ~ p.slug ~ "/"} if p.from_price else none)
+              "availability": ({"in": "https://schema.org/InStock", "low": "https://schema.org/LimitedAvailability", "out": "https://schema.org/BackOrder", "mto": "https://schema.org/MadeToOrder"}[p.stock.status] if p.stock else "https://schema.org/InStock"), "url": cfg.site_url ~ "/p/" ~ p.slug ~ "/"} if p.from_price else none)
 } | tojson }}</script>
 {% endblock %}
 {% block bodyclass %}page-product{% endblock %}
@@ -42,6 +42,21 @@
       <h1>{{ p.name }}</h1>
       <p class="meta">{% if p.brand %}<span class="brand">{{ p.brand }}</span> &middot; {% endif %}Style {{ p.style }}{% if p.min_qty %} &middot; Minimum {{ p.min_qty }}{% endif %}</p>
 
+      {% if p.stock %}
+      {% set st = p.stock %}
+      <div class="stock stock-{{ st.status }}">
+        <span class="stock-dot" aria-hidden="true"></span>
+        <p>
+        {% if st.status == "in" %}<strong>In stock</strong> <span>{{ "{:,}".format(st.total) }} on hand{% if p.colors | length > 1 %} across {{ p.colors | length }} colors{% endif %}</span>
+        {% elif st.status == "low" %}<strong>Limited stock</strong> <span>{{ "{:,}".format(st.total) }} on hand{% if st.next %}, {{ "{:,}".format(st.next.qty) }} more arriving {{ st.next_label }}{% endif %}</span>
+        {% elif st.status == "out" %}<strong>Restocking</strong> <span>{% if st.next %}{{ "{:,}".format(st.next.qty) }} arriving {{ st.next_label }}{% else %}ask us for the next availability date{% endif %}</span>
+        {% else %}<strong>Made to order</strong> <span>produced for your program, ask us for timing</span>
+        {% endif %}
+        </p>
+        {% if stock_date %}<p class="stock-note">Stock checked {{ stock_date }}. Confirmed when we quote.</p>{% endif %}
+      </div>
+      {% endif %}
+
       {% if p.display_price %}
       <div class="pricebox">
         <p class="price-from"><strong>{{ p.display_price | money }}</strong> <span>per piece, list, {{ p.display_label }}</span></p>
@@ -64,7 +79,7 @@
           {% for c in p.colors %}
           <button type="button" class="swatch" title="{{ c.name }}" data-src="{{ c.img | replace('/t_PS_MEDIUM/', '/t_PS_EXTRALARGE2/') }}">
             {% if c.img %}<img loading="lazy" src="{{ c.img | replace('/t_PS_MEDIUM/', '/t_PS_SMALL/') }}" alt="">{% endif %}
-            <span>{{ c.name }}</span>
+            <span>{{ c.name }}{% if c.qty is not none and p.stock and p.stock.status != "mto" %}<em class="swatch-qty{% if c.qty == 0 %} swatch-qty-out{% endif %}">{% if c.qty > 0 %}{{ "{:,}".format(c.qty) }} in stock{% else %}restocking{% endif %}</em>{% endif %}</span>
           </button>
           {% endfor %}
         </div>

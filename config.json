@@ -15,6 +15,13 @@
     "decoration": "https://public.pcna.online/pcnapublicftp/Feeds/Pcna.ProductDecoration.csv.zip"
   },
   "cache_hours": 20,
+  "inventory": {
+    "enabled": true,
+    "endpoint": "https://psinventory200.pcna.online/psInventory.svc",
+    "workers": 6,
+    "max_cache_hours": 48,
+    "_note": "Credentials are read from the PCNA_PS_ID and PCNA_PS_PASSWORD environment variables (GitHub repository secrets). Never put them in this file."
+  },
   "pricing": {
     "mode": "list",
     "markup_margin": 0.4,

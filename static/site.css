@@ -163,3 +163,21 @@ details.block summary { cursor: pointer; font-weight: 600; text-transform: upper
 .footer-links a:hover { color: var(--gold); }
 .footer-note { font-size: .82rem; color: var(--muted); }
 .footer-note p { margin-bottom: .5em; }
+
+/* ---- live stock ---------------------------------------------------------- */
+.stock { display: grid; grid-template-columns: 12px 1fr; column-gap: 10px; align-items: baseline; margin: 4px 0 16px; padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--white); }
+.stock p { margin: 0; font-size: .92rem; }
+.stock p strong { font-weight: 600; margin-right: 4px; }
+.stock p span { color: var(--muted); }
+.stock .stock-note { grid-column: 2; font-size: .78rem; color: var(--muted); margin-top: 2px; }
+.stock-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); transform: translateY(1px); }
+.stock-in .stock-dot { background: #2E7D4F; }
+.stock-low .stock-dot { background: var(--gold); }
+.stock-out .stock-dot { background: #B5532E; }
+.stock-mto .stock-dot { background: var(--vault); }
+.swatch-qty { display: block; font-style: normal; font-size: .72rem; color: var(--muted); }
+.swatch-qty-out { color: #B5532E; }
+.card-stock { margin: 4px 0 0; font-size: .76rem; font-weight: 500; color: #2E7D4F; }
+.card-stock-low { color: var(--gold-deep); }
+.stock-toggle { display: flex; align-items: center; gap: 6px; font-size: .88rem; white-space: nowrap; cursor: pointer; }
+.stock-toggle input { width: 16px; height: 16px; accent-color: var(--vault); }

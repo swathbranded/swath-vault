@@ -6,7 +6,8 @@
   const grid = $("grid"), countEl = $("count"), moreBtn = $("more"), emptyEl = $("empty");
   const qEl = $("q"), subEl = $("sub"), brandEl = $("brand"), priceEl = $("price"), sortEl = $("sort");
   let items = [], shown = 0, current = [];
-  const state = { q: "", cat: "", sub: "", brand: "", price: "", sort: "rel" };
+  const state = { q: "", cat: "", sub: "", brand: "", price: "", stock: "", sort: "rel" };
+  const stockEl = $("stock");
 
   const money = (n) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const esc = (s) => String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -32,6 +33,7 @@
     brandEl.value = state.brand;
     priceEl.value = state.price;
     sortEl.value = state.sort;
+    if (stockEl) stockEl.checked = state.stock === "1";
   }
 
   function fillSubs() {
@@ -65,6 +67,7 @@
       if (state.sub && it.sc !== state.sub) continue;
       if (state.brand && it.b !== state.brand) continue;
       if (state.price && (it.p == null || it.p < lo || it.p >= hi)) continue;
+      if (state.stock === "1" && it.st !== "in") continue;
       let sc = 0;
       if (terms.length) { sc = score(it, terms); if (sc < 0) continue; }
       current.push([sc, it]);
@@ -89,6 +92,7 @@
         <h3 class="card-title">${esc(it.n)}</h3>
         ${it.p != null ? `<p class="card-price"><strong>${money(it.p)}</strong> <span class="muted">${esc((it.pl || "").replace("decorated, ", ""))}</span></p>` : ""}
         ${it.k > 1 ? `<p class="card-colors">${it.k} colors</p>` : ""}
+        ${it.st === "in" ? `<p class="card-stock">In stock</p>` : it.st === "low" ? `<p class="card-stock card-stock-low">Limited stock</p>` : ""}
       </div></a>`;
   }
 
@@ -113,8 +117,9 @@
   brandEl.addEventListener("change", () => { state.brand = brandEl.value; apply(); });
   priceEl.addEventListener("change", () => { state.price = priceEl.value; apply(); });
   sortEl.addEventListener("change", () => { state.sort = sortEl.value; apply(); });
+  if (stockEl) stockEl.addEventListener("change", () => { state.stock = stockEl.checked ? "1" : ""; apply(); });
   moreBtn.addEventListener("click", renderMore);
-  $("reset").addEventListener("click", () => { Object.assign(state, { q: "", cat: "", sub: "", brand: "", price: "", sort: "rel" }); syncControls(); apply(); });
+  $("reset").addEventListener("click", () => { Object.assign(state, { q: "", cat: "", sub: "", brand: "", price: "", stock: "", sort: "rel" }); syncControls(); apply(); });
 
   readUrl();
   countEl.textContent = "Opening the Vault...";
