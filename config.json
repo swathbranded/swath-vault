@@ -22,6 +22,11 @@
     "max_cache_hours": 48,
     "_note": "Credentials are read from the PCNA_PS_ID and PCNA_PS_PASSWORD environment variables (GitHub repository secrets). Never put them in this file."
   },
+  "product_types": {
+    "enabled": true,
+    "workers": 6,
+    "_note": "Real product types (Tumblers, Backpacks, Polos...) from PCNA's PromoStandards Product Data service; same secrets as inventory."
+  },
   "pricing": {
     "mode": "list",
     "markup_margin": 0.4,

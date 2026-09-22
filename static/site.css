@@ -181,3 +181,4 @@ details.block summary { cursor: pointer; font-weight: 600; text-transform: upper
 .card-stock-low { color: var(--gold-deep); }
 .stock-toggle { display: flex; align-items: center; gap: 6px; font-size: .88rem; white-space: nowrap; cursor: pointer; }
 .stock-toggle input { width: 16px; height: 16px; accent-color: var(--vault); }
+.filter-row label.stock-toggle { flex-direction: row; align-items: center; align-self: flex-end; gap: 8px; min-height: 36px; letter-spacing: 0; text-transform: none; font-size: .9rem; color: var(--ink); }

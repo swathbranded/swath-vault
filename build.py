@@ -29,6 +29,7 @@ import pandas as pd
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
 from inventory import load_inventory, normalize_color
+from productdata import load_types
 
 ROOT = Path(__file__).resolve().parent
 CACHE = ROOT / "cache"
@@ -408,6 +409,23 @@ def build_products(cfg: dict, refresh: bool, limit: int | None) -> tuple[list[di
             "decoration": decoration,
         })
 
+    stats["styles_published"] = len(products)
+
+    # ---- product types (PromoStandards Product Data) ------------------------ #
+    # The public feed repeats the category as the subcategory, so the Type filter
+    # was empty. Product Data carries the real types.
+    print("Checking product types")
+    types = load_types([p["style"] for p in products], cfg.get("product_types", {}), CACHE)
+    stats["styles_typed"] = 0
+    for p in products:
+        ct = types.get(p["style"])
+        if ct and ct[1] and ct[0] == p["category"]:
+            p["subcategory"] = ct[1]
+            stats["styles_typed"] += 1
+    if excl_sub:
+        before = len(products)
+        products = [p for p in products if p["subcategory"] not in excl_sub]
+        stats["dropped"]["excluded type"] = before - len(products)
     stats["styles_published"] = len(products)
 
     # ---- live stock (PromoStandards Inventory) ------------------------------ #

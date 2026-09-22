@@ -37,10 +37,26 @@
   }
 
   function fillSubs() {
-    const subs = state.cat ? (S.categories[state.cat] || []) : [];
-    subEl.innerHTML = '<option value="">All types</option>' + subs.filter((s) => s && s !== state.cat).map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("");
-    subEl.disabled = subs.length <= 1;
-    if (!subs.includes(state.sub)) state.sub = "";
+    // With a category chosen: that category's types. With "All": every type, grouped by
+    // category, and picking one also selects its category.
+    const cats = S.categories || {};
+    const typesOf = (c) => (cats[c] || []).filter((s) => s && s !== c);
+    let html = '<option value="">All types</option>', any = false;
+    if (state.cat) {
+      const subs = typesOf(state.cat);
+      any = subs.length > 0;
+      html += subs.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("");
+    } else {
+      for (const c of Object.keys(cats)) {
+        const subs = typesOf(c);
+        if (!subs.length) continue;
+        any = true;
+        html += `<optgroup label="${esc(c)}">` + subs.map((s) => `<option value="${esc(c + "||" + s)}">${esc(s)}</option>`).join("") + "</optgroup>";
+      }
+    }
+    subEl.innerHTML = html;
+    subEl.disabled = !any;
+    if (state.cat && !typesOf(state.cat).includes(state.sub)) state.sub = "";
   }
 
   function score(it, terms) {
@@ -113,7 +129,18 @@
     fillSubs(); subEl.value = ""; apply();
     document.getElementById("vault").scrollIntoView({ behavior: "smooth", block: "start" });
   }));
-  subEl.addEventListener("change", () => { state.sub = subEl.value; apply(); });
+  subEl.addEventListener("change", () => {
+    const v = subEl.value;
+    if (v.includes("||")) {
+      const [c, sub] = v.split("||");
+      state.cat = c; state.sub = sub;
+      document.querySelectorAll("#cat-chips .chip").forEach((x) => x.classList.toggle("chip-on", x.dataset.cat === c));
+      fillSubs(); subEl.value = sub;
+    } else {
+      state.sub = v;
+    }
+    apply();
+  });
   brandEl.addEventListener("change", () => { state.brand = brandEl.value; apply(); });
   priceEl.addEventListener("change", () => { state.price = priceEl.value; apply(); });
   sortEl.addEventListener("change", () => { state.sort = sortEl.value; apply(); });

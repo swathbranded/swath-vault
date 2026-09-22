@@ -171,6 +171,16 @@ def load_inventory(styles, cfg_inv: dict, cache_dir: Path, program_qty: int):
     endpoint = cfg_inv["endpoint"]
     workers = int(cfg_inv.get("workers", 6))
     styles = list(dict.fromkeys(styles))
+
+    # Quick login check: one call first, so a bad password stops the run in seconds
+    # instead of failing 2,600 times.
+    if styles:
+        probe = fetch_one(endpoint, user, pw, styles[0])
+        err = (probe.get("error") or "").lower()
+        if "105" in err or "invalid username" in err or "password" in err:
+            print(f"  inventory: LOGIN REJECTED by PCNA ({probe['error']}).")
+            print("    Re-enter the PCNA_PS_ID / PCNA_PS_PASSWORD repository secrets.")
+            return from_cache("login rejected")
     print(f"  inventory: checking {len(styles)} styles ({workers} at a time)")
     t0 = time.time()
     out, errors = {}, {}
