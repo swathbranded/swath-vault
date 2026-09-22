@@ -59,16 +59,58 @@
     if (state.cat && !typesOf(state.cat).includes(state.sub)) state.sub = "";
   }
 
+  // Search synonyms: typing any word in a group finds items matching any other word in it.
+  const SYN = [
+    ["hat", "hats", "cap", "caps", "ballcap", "beanie", "beanies", "toque", "visor", "boonie", "snapback", "trucker", "headwear"],
+    ["bottle", "bottles", "flask"],
+    ["tumbler", "tumblers", "quencher"],
+    ["mug", "mugs", "cup", "cups"],
+    ["backpack", "backpacks", "daypack", "rucksack"],
+    ["tote", "totes"],
+    ["duffel", "duffle", "duffels"],
+    ["tee", "tees", "t-shirt", "tshirt", "t-shirts"],
+    ["hoodie", "hoodies", "hoody", "hooded"],
+    ["jacket", "jackets", "outerwear"],
+    ["notebook", "notebooks", "journal", "journals"],
+    ["padfolio", "padfolios", "portfolio"],
+    ["pen", "pens"],
+    ["charger", "chargers", "charging", "powerbank", "power bank"],
+    ["blanket", "blankets", "throw", "throws"],
+    ["cooler", "coolers"],
+    ["umbrella", "umbrellas"],
+    ["speaker", "speakers"],
+    ["earbuds", "headphones"],
+    ["glove", "gloves", "mitt", "mitts", "mittens"],
+    ["keychain", "keychains", "keyring"],
+    ["towel", "towels"],
+  ];
+  const SYN_MAP = {};
+  for (const g of SYN) for (const w of g) (SYN_MAP[w] = SYN_MAP[w] || new Set(), g.forEach((x) => SYN_MAP[w].add(x)));
+  const expand = (t) => [...(SYN_MAP[t] || [t])];
+  // Short terms (3 letters or fewer) must match whole words, so "hat" never hits "Manhattan".
+  const hitsIn = (hay, w) => (w.length <= 3 ? new RegExp("(^|[^a-z0-9])" + w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "($|[^a-z0-9])").test(hay) : hay.includes(w));
+
   function score(it, terms) {
-    const hay = (it.n + " " + it.b + " " + it.s + " " + it.c + " " + it.sc + " " + (it.m || []).join(" ")).toLowerCase();
+    const name = it.n.toLowerCase(), brand = (it.b || "").toLowerCase(), style = it.s.toLowerCase();
+    const type = ((it.c || "") + " " + (it.sc || "")).toLowerCase();
+    const hay = name + " " + brand + " " + style + " " + type + " " + (it.m || []).join(" ").toLowerCase();
     let sc = 0;
     for (const t of terms) {
-      if (!hay.includes(t)) return -1;
-      if (it.n.toLowerCase().startsWith(t)) sc += 6;
-      else if (it.n.toLowerCase().includes(t)) sc += 4;
-      else if ((it.b || "").toLowerCase().includes(t)) sc += 3;
-      else if (it.s.toLowerCase().includes(t)) sc += 5;
-      else sc += 1;
+      const alts = expand(t);
+      let best = 0;
+      for (const w of alts) {
+        if (!hitsIn(hay, w)) continue;
+        const exact = w === t;
+        let s = 1;
+        if (hitsIn(name, w)) s = name.startsWith(w) ? 10 : 8;   // the word is in the product name
+        else if (hitsIn(style, w)) s = 8;                          // or it is the style number
+        else if (hitsIn(brand, w)) s = 5;
+        else if (hitsIn(type, w)) s = 4;                           // only the category/type matches
+        if (!exact) s = Math.max(1, s - 3);                        // synonym hits rank below exact hits
+        if (s > best) best = s;
+      }
+      if (!best) return -1;
+      sc += best;
     }
     return sc;
   }

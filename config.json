@@ -79,5 +79,52 @@
       "We do the rest",
       "Curation, mockups, pricing, decoration, kitting and shipping, under one point of contact."
     ]
-  ]
+  ],
+  "type_rules": {
+    "_note": "Applied after PCNA's types. First matching rule wins. 'match' and 'exclude' are case-insensitive regexes tested against 'style name brand'. Cleans up PCNA's scattered typing (headwear filed under Accessories, Hats, Headwear and Outdoor & Sport).",
+    "rules": [
+      {
+        "match": "\\b(cap|caps|ballcap|beanie|toque|visor|bucket hat|boonie|snapback|trucker|headband|hat)\\b",
+        "exclude": "\\b(bottle|tumbler|kanteen|flask|mouth|pencil|strap|clip|marker|mirror|lens|pack)\\b|\\boz\\b",
+        "category": "Apparel",
+        "type": "Headwear"
+      },
+      {
+        "match": "^TM320\\d\\d\\b|^SM-84[01]\\d\\b",
+        "category": "Apparel",
+        "type": "Headwear"
+      },
+      {
+        "match": "\\b(glove|gloves|mitt|mitts|mittens|scarf|snood|socks)\\b",
+        "category": "Apparel",
+        "type": "Cold Weather & Accessories"
+      },
+      {
+        "match": "\\bpolo\\b",
+        "category": "Apparel",
+        "type": "Polos"
+      },
+      {
+        "match": "\\b(sweatpant|jogger|pant|pants|shorts)\\b",
+        "category": "Apparel",
+        "type": "Pants & Shorts"
+      },
+      {
+        "match": "\\b(jacket|full zip|quarter-zip|mid-layer|vest|parka|anorak)\\b",
+        "exclude": "\\bsafety\\b",
+        "category": "Apparel",
+        "type": "Outerwear"
+      },
+      {
+        "match": "\\b(henley|tee|tees|t-shirt|tshirt)\\b",
+        "exclude": "\\b(golf|button)\\b",
+        "category": "Apparel",
+        "type": "T-Shirts"
+      }
+    ]
+  },
+  "type_merges": {
+    "_note": "Rename PCNA types that mean the same thing.",
+    "Hats": "Headwear"
+  }
 }

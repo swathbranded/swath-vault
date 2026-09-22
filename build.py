@@ -417,11 +417,22 @@ def build_products(cfg: dict, refresh: bool, limit: int | None) -> tuple[list[di
     print("Checking product types")
     types = load_types([p["style"] for p in products], cfg.get("product_types", {}), CACHE)
     stats["styles_typed"] = 0
+    merges = {k: v for k, v in cfg.get("type_merges", {}).items() if not k.startswith("_")}
+    rules = [(re.compile(r["match"], re.I), re.compile(r["exclude"], re.I) if r.get("exclude") else None,
+              r["category"], r["type"]) for r in cfg.get("type_rules", {}).get("rules", [])]
+    stats["styles_retyped"] = 0
     for p in products:
         ct = types.get(p["style"])
         if ct and ct[1] and ct[0] == p["category"]:
-            p["subcategory"] = ct[1]
+            p["subcategory"] = merges.get(ct[1], ct[1])
             stats["styles_typed"] += 1
+        hay = f'{p["style"]} {p["name"]} {p["brand"]}'
+        for rx, ex, cat, sub in rules:
+            if rx.search(hay) and not (ex and ex.search(hay)):
+                if (p["category"], p["subcategory"]) != (cat, sub):
+                    stats["styles_retyped"] += 1
+                p["category"], p["subcategory"] = cat, sub
+                break
     if excl_sub:
         before = len(products)
         products = [p for p in products if p["subcategory"] not in excl_sub]
