@@ -15,6 +15,8 @@
   --display: "Cinzel", Georgia, serif;
 }
 * { box-sizing: border-box; }
+/* The hidden attribute must beat any display rule, or .btn { display: inline-flex } keeps #more on screen. */
+[hidden] { display: none !important; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; font-family: var(--font); color: var(--ink); background: var(--paper); line-height: 1.55; font-size: 16px; }
 img { max-width: 100%; height: auto; display: block; }

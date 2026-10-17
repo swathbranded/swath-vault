@@ -200,9 +200,19 @@ def build_products(cfg: dict, refresh: bool, limit: int | None) -> tuple[list[di
 
     print("Loading media")
     media = read_zip_csv(zm, usecols=["Style", "Sku", "Url", "ClassTypeName"], dtype=str).fillna("")
-    # NOTE: in PCNA's media feed the columns are swapped: "Style" holds the SKU
-    # (with colour suffix) and "Sku" holds the style number.
-    media = media.rename(columns={"Style": "sku", "Sku": "style"})
+    # PCNA's media feed shipped with "Style" and "Sku" swapped ("Style" held the SKU
+    # with its colour suffix) until October 2026, when PCNA corrected it. Work out
+    # which column holds the style number by matching against the product feed, so
+    # either layout builds instead of every style losing its images.
+    known = set(prod.PCNA_Style_Number.str.strip())
+    as_is = media.Style.str.strip().isin(known).mean()
+    swapped = media.Sku.str.strip().isin(known).mean()
+    if swapped > as_is:
+        media = media.rename(columns={"Style": "sku", "Sku": "style"})
+        print(f"  media: Style/Sku columns are swapped ({swapped:.0%} of rows match a style on Sku)")
+    else:
+        media = media.rename(columns={"Style": "style", "Sku": "sku"})
+        print(f"  media: {as_is:.0%} of rows match a product style")
     media = media[media.Url.str.contains("/t_PS_MEDIUM/", na=False)].copy()
     media["tags"] = media.ClassTypeName.apply(lambda s: set(t.strip() for t in s.split(",") if t.strip()))
     media["score"] = media.tags.apply(media_score)
@@ -461,6 +471,42 @@ def build_products(cfg: dict, refresh: bool, limit: int | None) -> tuple[list[di
 
 
 # --------------------------------------------------------------------------- #
+# Guard
+# --------------------------------------------------------------------------- #
+
+MIN_ITEMS = 2000      # a healthy build has well over this many styles
+MAX_DROP_PCT = 15     # and is never this far below what is live right now
+
+
+def live_count(cfg: dict) -> int | None:
+    """How many pieces the live Vault has right now, from its data/index.json."""
+    url = cfg["site_url"].rstrip("/") + "/data/index.json"
+    try:
+        req = Request(url, headers={"User-Agent": "swath-vault-builder/1.0"})
+        with urlopen(req, timeout=30) as r:
+            return len(json.load(r))
+    except Exception as e:
+        print(f"  guard: could not read {url} ({e})")
+        return None
+
+
+def guard(cfg: dict, count: int):
+    """Refuse to publish a near-empty Vault.
+
+    A bad feed night (a feed caught mid-regeneration, an outage, a schema change)
+    must leave yesterday's site up, so this runs before dist/ is written and
+    exits non-zero, which stops the deploy job."""
+    live = live_count(cfg)
+    print(f"  guard: {count} styles in this build; live site has "
+          f"{live if live is not None else 'an unknown number'}")
+    if count < MIN_ITEMS:
+        sys.exit(f"ABORT: only {count} styles built, under the floor of {MIN_ITEMS}. Not publishing.")
+    if live and count < live * (1 - MAX_DROP_PCT / 100):
+        sys.exit(f"ABORT: {count} styles is more than {MAX_DROP_PCT}% below the {live} live now. Not publishing.")
+    print("  guard: ok")
+
+
+# --------------------------------------------------------------------------- #
 # Rendering
 # --------------------------------------------------------------------------- #
 
@@ -510,7 +556,7 @@ def render_site(cfg: dict, products: list[dict], stats: dict, local: bool = Fals
     # straight from disk (double-click index.html) without a web server.
     sfx = "index.html" if local else ""
     common = dict(cfg=cfg, built=built, stock_date=stock_date, categories=categories, brands=brands,
-                  featured=featured, count=len(products), stats=stats, sfx=sfx)
+                  featured=featured, count=len(products), count_fmt=f"{len(products):,}", stats=stats, sfx=sfx)
 
     def write(path: Path, html: str):
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -565,12 +611,17 @@ def main():
     ap.add_argument("--refresh", action="store_true", help="force re-download of the feeds")
     ap.add_argument("--limit", type=int, default=None, help="only build the first N styles")
     ap.add_argument("--local", action="store_true", help="links end in index.html so dist/ works opened from disk")
+    ap.add_argument("--no-guard", action="store_true", help="skip the item-count guard (test builds)")
     args = ap.parse_args()
 
     cfg = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
     t0 = time.time()
     products, stats = build_products(cfg, args.refresh, args.limit)
     print(f"Built {stats['styles_published']} of {stats['styles_in_feed']} styles; dropped: {stats['dropped']}")
+    if args.limit or args.no_guard:
+        print("  guard: skipped (test build)")
+    else:
+        guard(cfg, stats["styles_published"])
     print("Rendering")
     render_site(cfg, products, stats, local=args.local)
     print(f"Done in {time.time()-t0:.0f}s. Output in {DIST}")
