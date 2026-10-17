@@ -137,7 +137,8 @@
     shown = 0;
     grid.innerHTML = "";
     renderMore();
-    countEl.textContent = current.length === items.length ? `${items.length} pieces` : `${current.length} of ${items.length} pieces`;
+    const num = (n) => n.toLocaleString("en-US");
+    countEl.textContent = current.length === items.length ? `${num(items.length)} pieces` : `${num(current.length)} of ${num(items.length)} pieces`;
     emptyEl.hidden = current.length > 0;
     writeUrl();
   }
