@@ -30,7 +30,7 @@
         <div class="card-body">
           <p class="card-brand">{{ p.brand or p.subcategory }}</p>
           <h3 class="card-title">{{ p.name }}</h3>
-          {% if p.display_price %}<p class="card-price"><strong>{{ p.display_price | money }}</strong> <span class="muted">{{ p.display_label | replace(", ", " &middot; " | safe) }}</span></p>{% endif %}
+          {% if p.display_price %}<p class="card-price"><strong>{{ p.display_price | money }}</strong> <span class="muted">{{ p.display_label | replace(", ", " &middot; " | safe) }}</span></p>{% elif p.price_guarded %}<p class="card-price"><span class="muted">{{ p.display_label | replace(", ", " &middot; " | safe) }}</span></p>{% endif %}
         </div>
       </a>
       {% endfor %}

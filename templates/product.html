@@ -1,7 +1,7 @@
 {% set root = "../../" %}
 {% extends "base.html" %}
 {% block title %}{{ p.name }}{% if p.brand %} by {{ p.brand }}{% endif %} | The Vault | SWATH Branded Goods{% endblock %}
-{% block description %}{{ p.name }}{% if p.brand %} by {{ p.brand }}{% endif %}, custom branded for your program by SWATH Branded Goods.{% if p.from_price %} From {{ p.from_price | money }} list.{% endif %}{% endblock %}
+{% block description %}{{ p.name }}{% if p.brand %} by {{ p.brand }}{% endif %}, custom branded for your program by SWATH Branded Goods.{% if p.from_price and not p.price_guarded %} From {{ p.from_price | money }} list.{% endif %}{% endblock %}
 {% block head %}
 <link rel="canonical" href="{{ cfg.site_url }}/p/{{ p.slug }}/">
 <meta property="og:title" content="{{ p.name }}">
@@ -13,7 +13,7 @@
   "brand": ({"@type": "Brand", "name": p.brand} if p.brand else none),
   "description": p.description or p.name,
   "offers": ({"@type": "AggregateOffer", "priceCurrency": "USD", "lowPrice": p.from_price,
-              "availability": ({"in": "https://schema.org/InStock", "low": "https://schema.org/LimitedAvailability", "out": "https://schema.org/BackOrder", "mto": "https://schema.org/MadeToOrder"}[p.stock.status] if p.stock else "https://schema.org/InStock"), "url": cfg.site_url ~ "/p/" ~ p.slug ~ "/"} if p.from_price else none)
+              "availability": ({"in": "https://schema.org/InStock", "low": "https://schema.org/LimitedAvailability", "out": "https://schema.org/BackOrder", "mto": "https://schema.org/MadeToOrder"}[p.stock.status] if p.stock else "https://schema.org/InStock"), "url": cfg.site_url ~ "/p/" ~ p.slug ~ "/"} if p.from_price and not p.price_guarded else none)
 } | tojson }}</script>
 {% endblock %}
 {% block bodyclass %}page-product{% endblock %}
@@ -63,6 +63,10 @@
         {% if p.low_price %}<p class="price-program">as low as {{ p.low_price | money }} at {{ p.low_qty }}+ pieces</p>{% endif %}
         <p class="price-note">{{ cfg.pricing.note }}</p>
       </div>
+      {% elif p.price_guarded %}
+      <div class="pricebox">
+        <p class="price-from"><strong>Ask for pricing.</strong>{% if p.min_qty %} <span>Minimum {{ p.min_qty }}.</span>{% endif %}</p>
+      </div>
       {% endif %}
 
       <div class="cta">
@@ -103,7 +107,7 @@
       </section>
       {% endif %}
 
-      {% if cfg.pricing.show_price_table and p.decorated_tiers %}
+      {% if cfg.pricing.show_price_table and p.decorated_tiers and not p.price_guarded %}
       <details class="block">
         <summary>List price by quantity</summary>
         <table class="tiers">
@@ -142,7 +146,7 @@
         <div class="card-body">
           <p class="card-brand">{{ r.brand or r.subcategory }}</p>
           <h3 class="card-title">{{ r.name }}</h3>
-          {% if r.display_price %}<p class="card-price"><strong>{{ r.display_price | money }}</strong> <span class="muted">{{ r.display_label | replace(", ", " &middot; " | safe) }}</span></p>{% endif %}
+          {% if r.display_price %}<p class="card-price"><strong>{{ r.display_price | money }}</strong> <span class="muted">{{ r.display_label | replace(", ", " &middot; " | safe) }}</span></p>{% elif r.price_guarded %}<p class="card-price"><span class="muted">{{ r.display_label | replace(", ", " &middot; " | safe) }}</span></p>{% endif %}
         </div>
       </a>
       {% endfor %}

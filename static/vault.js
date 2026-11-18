@@ -149,7 +149,7 @@
       <div class="card-body">
         <p class="card-brand">${esc(it.b || it.sc || it.c)}</p>
         <h3 class="card-title">${esc(it.n)}</h3>
-        ${it.p != null ? `<p class="card-price"><strong>${money(it.p)}</strong> <span class="muted">${esc((it.pl || "").replace(", ", " · "))}</span></p>` : ""}
+        ${it.p != null ? `<p class="card-price"><strong>${money(it.p)}</strong> <span class="muted">${esc((it.pl || "").replace(", ", " · "))}</span></p>` : it.g ? `<p class="card-price"><span class="muted">${esc((it.pl || "").replace(", ", " · "))}</span></p>` : ""}
         ${it.k > 1 ? `<p class="card-colors">${it.k} colors</p>` : ""}
         ${it.st === "in" ? `<p class="card-stock">In stock</p>` : it.st === "low" ? `<p class="card-stock card-stock-low">Limited stock</p>` : ""}
       </div></a>`;
