@@ -308,9 +308,12 @@ def build_products(cfg: dict, refresh: bool, limit: int | None) -> tuple[list[di
             program_price = (eligible[-1] if eligible else dec_tiers[0])[1]
         min_qty = tiers_for_from[0][0] if tiers_for_from else None
         # What the cards and the price box lead with: the decorated list price
-        # at the program quantity (or the blank price when nothing decorated exists).
-        if program_price is not None:
-            display_price, display_label = program_price, f"decorated, at {program_qty} pieces"
+        # at the item's own minimum quantity, its lowest decorated tier (or the
+        # blank price when nothing decorated exists). program_quantity no longer
+        # sets the shown price; it still drives the "Limited stock" threshold.
+        if dec_tiers:
+            display_price = dec_tiers[0][1]
+            display_label = f"each, as few as {min_qty}" if min_qty else "each"
         else:
             display_price, display_label = from_price, "blank"
         low_qty, low_price = None, None

@@ -100,7 +100,8 @@ Collection". Put the style numbers of the Collection items there, in the order y
 
 **Pricing.** `pricing.mode` is `list` (show PCNA list price, the safe public number) or
 `markup` (take PCNA net and divide by one minus `markup_margin`, currently 40%). Cards and
-item pages lead with the decorated price at `program_quantity` (100). `show_price_table`
+item pages lead with the decorated price at each item's own minimum quantity (its lowest
+decorated tier). `program_quantity` (100) only sets the "Limited stock" threshold. `show_price_table`
 turns the full price-by-quantity table on or off, and `show_blank_prices` adds a blank
 column to it. `spotlight_price` sets which price point sorts to the top of the default
 listing. `note` is the sentence printed under every price.

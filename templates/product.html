@@ -59,7 +59,7 @@
 
       {% if p.display_price %}
       <div class="pricebox">
-        <p class="price-from"><strong>{{ p.display_price | money }}</strong> <span>per piece, list, {{ p.display_label }}</span></p>
+        <p class="price-from"><strong>{{ p.display_price | money }}</strong> <span>{% if p.decorated_tiers and p.min_qty %}per piece at the {{ p.min_qty }}-piece minimum, list{% elif p.decorated_tiers %}per piece, list{% else %}per piece, list, {{ p.display_label }}{% endif %}</span></p>
         {% if p.low_price %}<p class="price-program">as low as {{ p.low_price | money }} at {{ p.low_qty }}+ pieces</p>{% endif %}
         <p class="price-note">{{ cfg.pricing.note }}</p>
       </div>
@@ -142,7 +142,7 @@
         <div class="card-body">
           <p class="card-brand">{{ r.brand or r.subcategory }}</p>
           <h3 class="card-title">{{ r.name }}</h3>
-          {% if r.display_price %}<p class="card-price"><strong>{{ r.display_price | money }}</strong> <span class="muted">{{ r.display_label | replace("decorated, ", "") }}</span></p>{% endif %}
+          {% if r.display_price %}<p class="card-price"><strong>{{ r.display_price | money }}</strong> <span class="muted">{{ r.display_label | replace(", ", " &middot; " | safe) }}</span></p>{% endif %}
         </div>
       </a>
       {% endfor %}
