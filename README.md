@@ -101,7 +101,9 @@ Collection". Put the style numbers of the Collection items there, in the order y
 **Pricing.** `pricing.mode` is `list` (show PCNA list price, the safe public number) or
 `markup` (take PCNA net and divide by one minus `markup_margin`, currently 40%). Cards and
 item pages lead with the decorated price at each item's own minimum quantity (its lowest
-decorated tier). `program_quantity` (100) only sets the "Limited stock" threshold. An item
+decorated tier). When the SKUs in a style carry different price ladders (a closeout
+color, for instance), the build shows the ladder shared by the most SKUs, with ties going
+to the lower price at the minimum tier. `program_quantity` (100) only sets the "Limited stock" threshold. An item
 whose decorated tiers are not in descending price order (bad supplier data) shows "Ask for
 pricing" with no price, no "as low as" line and no price table; the build log lists each
 one with its tiers so it can be raised with the supplier. `show_price_table`

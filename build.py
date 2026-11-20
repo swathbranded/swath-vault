@@ -277,19 +277,37 @@ def build_products(cfg: dict, refresh: bool, limit: int | None) -> tuple[list[di
         pr = pricing_by_style.get(style)
         dec_tiers, blank_tiers = [], []
         if pr is not None:
-            def tiers(desc):
+            # SKUs in one style can carry different price ladders (a closeout
+            # colour, for instance). Taking the minimum per quantity across all
+            # SKUs interleaves those ladders into a table no SKU actually has.
+            # So build each SKU's own ladder and pick one base ladder per style:
+            # the one shared by the most SKUs, ties broken by the lowest price
+            # at the minimum tier.
+            def base_ladder(desc, only=None):
                 sub = pr[pr.PriceDescription == desc]
-                if sub.empty:
-                    return []
-                t = sub.groupby("quantityMin")["price"].min().sort_index()
-                return [(int(q), float(p)) for q, p in t.items() if p > 0]
-            if pc["mode"] == "markup":
+                if only:
+                    narrowed = sub[sub.SKU.isin(only)]
+                    sub = narrowed if not narrowed.empty else sub
+                ladders = {}
+                for sku, sg in sub.groupby("SKU"):
+                    t = sg.groupby("quantityMin")["price"].min().sort_index()
+                    lad = tuple((int(q), float(p)) for q, p in t.items() if p > 0)
+                    if lad:
+                        ladders.setdefault(lad, []).append(sku)
+                if not ladders:
+                    return [], [], 0
+                lad, skus = min(ladders.items(), key=lambda kv: (-len(kv[1]), kv[0][0][1], kv[0]))
+                return list(lad), skus, len(ladders)
+            net = pc["mode"] == "markup"
+            dec_tiers, base_skus, n_ladders = base_ladder("USD-Net-Decorated" if net else "USD-List-Decorated")
+            # Blank prices come from the same SKUs as the decorated base ladder.
+            blank_tiers, _, n_blank = base_ladder("USD-Net-Blank" if net else "USD-List-Blank", base_skus)
+            if (n_ladders or n_blank) > 1:
+                stats["styles_multi_ladder"] = stats.get("styles_multi_ladder", 0) + 1
+            if net:
                 margin = float(pc.get("markup_margin", 0.4))
-                dec_tiers = [(q, round(p / (1 - margin), 2)) for q, p in tiers("USD-Net-Decorated")]
-                blank_tiers = [(q, round(p / (1 - margin), 2)) for q, p in tiers("USD-Net-Blank")]
-            else:
-                dec_tiers = tiers("USD-List-Decorated")
-                blank_tiers = tiers("USD-List-Blank")
+                dec_tiers = [(q, round(p / (1 - margin), 2)) for q, p in dec_tiers]
+                blank_tiers = [(q, round(p / (1 - margin), 2)) for q, p in blank_tiers]
         tiers_for_from = dec_tiers or blank_tiers
         if not tiers_for_from:
             if f.get("require_pricing", True):
@@ -316,9 +334,10 @@ def build_products(cfg: dict, refresh: bool, limit: int | None) -> tuple[list[di
             display_label = f"each, as few as {min_qty}" if min_qty else "each"
         else:
             display_price, display_label = from_price, "blank"
-        # Guard: a decorated tier table that is not in descending price order
-        # (any tier priced higher than an earlier, lower-quantity tier) is bad
-        # supplier data. Show no price for it at all and ask for a quote instead.
+        # Guard, a safety net on the chosen ladder: a decorated tier table that is
+        # not in descending price order (any tier priced higher than an earlier,
+        # lower-quantity tier) is bad supplier data. Show no price for it at all
+        # and ask for a quote instead.
         price_guarded = any(dec_tiers[i][1] > dec_tiers[i - 1][1] + 0.005 for i in range(1, len(dec_tiers)))
         if price_guarded:
             display_price = None
@@ -641,6 +660,8 @@ def main():
     published = {p["style"] for p in products}
     guarded = [g for g in stats.pop("price_guarded", []) if g[0] in published]
     stats["price_guarded_count"] = len(guarded)
+    print(f"Price ladders: {stats.get('styles_multi_ladder', 0)} styles had SKUs on more than one "
+          f"price ladder; the ladder shared by the most SKUs is shown.")
     print(f"Price guard: {len(guarded)} styles have a decorated tier table that is not in "
           f"descending price order. Shown as 'Ask for pricing'.")
     for style, name, tiers in guarded:
