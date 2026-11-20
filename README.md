@@ -107,7 +107,8 @@ pricing" with no price, no "as low as" line and no price table; the build log li
 one with its tiers so it can be raised with the supplier. `show_price_table`
 turns the full price-by-quantity table on or off, and `show_blank_prices` adds a blank
 column to it. `spotlight_price` sets which price point sorts to the top of the default
-listing. `note` is the sentence printed under every price.
+listing. Items with no shown price sort to the
+end of their group (branded, then unbranded). `note` is the sentence printed under every price.
 
 **Links.** `quote_url` and `quote_param`: the quote button opens the Framer quote page
 with `?piece=Item name (style)` on the end. If you add a small code override in Framer that

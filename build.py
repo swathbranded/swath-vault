@@ -551,8 +551,13 @@ def render_site(cfg: dict, products: list[dict], stats: dict, local: bool = Fals
     # Default listing order: recognisable brands first, and within each group the
     # items closest to the "spotlight" price point (the sweet spot for a
     # premium program) come first.
+    # Items with no shown price go to the end of their group, by name.
     spot = float(cfg["pricing"].get("spotlight_price", 45))
-    products = sorted(products, key=lambda p: (0 if p["brand"] else 1, abs((p["display_price"] or 0) - spot), p["name"]))
+    products = sorted(products, key=lambda p: (
+        0 if p["brand"] else 1,
+        p["display_price"] is None,
+        abs(p["display_price"] - spot) if p["display_price"] is not None else 0,
+        p["name"]))
 
     # Lightweight search index for the listing page.
     index = [{
