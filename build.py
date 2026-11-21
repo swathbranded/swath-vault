@@ -308,13 +308,24 @@ def build_products(cfg: dict, refresh: bool, limit: int | None) -> tuple[list[di
             program_price = (eligible[-1] if eligible else dec_tiers[0])[1]
         min_qty = tiers_for_from[0][0] if tiers_for_from else None
         # What the cards and the price box lead with: the decorated list price
-        # at the program quantity (or the blank price when nothing decorated exists).
-        if program_price is not None:
-            display_price, display_label = program_price, f"decorated, at {program_qty} pieces"
+        # at the item's own minimum quantity, its lowest decorated tier (or the
+        # blank price when nothing decorated exists). program_quantity no longer
+        # sets the shown price; it still drives the "Limited stock" threshold.
+        if dec_tiers:
+            display_price = dec_tiers[0][1]
+            display_label = f"each, as few as {min_qty}" if min_qty else "each"
         else:
             display_price, display_label = from_price, "blank"
+        # Guard: a decorated tier table that is not in descending price order
+        # (any tier priced higher than an earlier, lower-quantity tier) is bad
+        # supplier data. Show no price for it at all and ask for a quote instead.
+        price_guarded = any(dec_tiers[i][1] > dec_tiers[i - 1][1] + 0.005 for i in range(1, len(dec_tiers)))
+        if price_guarded:
+            display_price = None
+            display_label = f"Ask for pricing, as few as {min_qty}" if min_qty else "Ask for pricing"
+            stats.setdefault("price_guarded", []).append((style, name, dec_tiers))
         low_qty, low_price = None, None
-        if tiers_for_from:
+        if tiers_for_from and not price_guarded:
             lq, lp = min(tiers_for_from, key=lambda t: (t[1], -t[0]))
             if lp < display_price - 0.005:
                 low_qty, low_price = lq, lp
@@ -414,6 +425,7 @@ def build_products(cfg: dict, refresh: bool, limit: int | None) -> tuple[list[di
             "low_price": low_price,
             "low_qty": low_qty,
             "min_qty": min_qty,
+            "price_guarded": price_guarded,
             "decorated_tiers": dec_tiers,
             "blank_tiers": blank_tiers,
             "decoration": decoration,
@@ -539,8 +551,13 @@ def render_site(cfg: dict, products: list[dict], stats: dict, local: bool = Fals
     # Default listing order: recognisable brands first, and within each group the
     # items closest to the "spotlight" price point (the sweet spot for a
     # premium program) come first.
+    # Items with no shown price go to the end of their group, by name.
     spot = float(cfg["pricing"].get("spotlight_price", 45))
-    products = sorted(products, key=lambda p: (0 if p["brand"] else 1, abs((p["display_price"] or 0) - spot), p["name"]))
+    products = sorted(products, key=lambda p: (
+        0 if p["brand"] else 1,
+        p["display_price"] is None,
+        abs(p["display_price"] - spot) if p["display_price"] is not None else 0,
+        p["name"]))
 
     # Lightweight search index for the listing page.
     index = [{
@@ -550,6 +567,7 @@ def render_site(cfg: dict, products: list[dict], stats: dict, local: bool = Fals
         "i": p["image"], "k": len(p["colors"]),
         "m": [d["method"] for d in p["decoration"]][:6],
         "st": (p["stock"] or {}).get("status", ""),
+        **({"g": 1} if p["price_guarded"] else {}),
     } for p in products]
 
     # --local writes links that end in index.html so the folder can be opened
@@ -618,6 +636,16 @@ def main():
     t0 = time.time()
     products, stats = build_products(cfg, args.refresh, args.limit)
     print(f"Built {stats['styles_published']} of {stats['styles_in_feed']} styles; dropped: {stats['dropped']}")
+    # Guarded items go to the log only (never to the published build-info.json),
+    # so they can be raised with the supplier.
+    published = {p["style"] for p in products}
+    guarded = [g for g in stats.pop("price_guarded", []) if g[0] in published]
+    stats["price_guarded_count"] = len(guarded)
+    print(f"Price guard: {len(guarded)} styles have a decorated tier table that is not in "
+          f"descending price order. Shown as 'Ask for pricing'.")
+    for style, name, tiers in guarded:
+        table = ", ".join(f"{q}+ {money(p)}" for q, p in tiers)
+        print(f"  {style} | {name} | {table}")
     if args.limit or args.no_guard:
         print("  guard: skipped (test build)")
     else:

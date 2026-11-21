@@ -100,10 +100,15 @@ Collection". Put the style numbers of the Collection items there, in the order y
 
 **Pricing.** `pricing.mode` is `list` (show PCNA list price, the safe public number) or
 `markup` (take PCNA net and divide by one minus `markup_margin`, currently 40%). Cards and
-item pages lead with the decorated price at `program_quantity` (100). `show_price_table`
+item pages lead with the decorated price at each item's own minimum quantity (its lowest
+decorated tier). `program_quantity` (100) only sets the "Limited stock" threshold. An item
+whose decorated tiers are not in descending price order (bad supplier data) shows "Ask for
+pricing" with no price, no "as low as" line and no price table; the build log lists each
+one with its tiers so it can be raised with the supplier. `show_price_table`
 turns the full price-by-quantity table on or off, and `show_blank_prices` adds a blank
 column to it. `spotlight_price` sets which price point sorts to the top of the default
-listing. `note` is the sentence printed under every price.
+listing. Items with no shown price sort to the
+end of their group (branded, then unbranded). `note` is the sentence printed under every price.
 
 **Links.** `quote_url` and `quote_param`: the quote button opens the Framer quote page
 with `?piece=Item name (style)` on the end. If you add a small code override in Framer that
